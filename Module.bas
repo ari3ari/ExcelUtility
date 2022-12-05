@@ -17,7 +17,7 @@ Public Function XLOOKUP_AH(match As Variant, matchRange As Range, returnRange As
             Exit Function
         End If
         
-        matchValue = match.value
+        matchValue = match.Value
     Else
         ' Range以外は値型として処理する（それ以外の場合はエラー）
         matchValue = match
@@ -50,10 +50,10 @@ Public Function XLOOKUP_AH(match As Variant, matchRange As Range, returnRange As
     nearest = 2000000000    ' 適当に大きい値を初期値とする
     
     For Each cell In matchRange
-        If cb.Predicate(cell.value, matchValue) Then
+        If cb.Predicate(cell.Value, matchValue) Then
             ' より近い値の場合は値を入れ替える
-            If Abs(matchValue - nearest) > Abs(matchValue - cell.value) Then
-                nearest = cell.value
+            If Abs(matchValue - nearest) > Abs(matchValue - cell.Value) Then
+                nearest = cell.Value
                 Set nearestCell = cell
             End If
         End If
@@ -68,7 +68,7 @@ Public Function XLOOKUP_AH(match As Variant, matchRange As Range, returnRange As
     If nearestCell Is Nothing Then
         returnValue = ifNotFound
     Else
-        returnValue = returnRange.Item(relativeRow, 1).value   ' 単一列のみ対応
+        returnValue = returnRange.Item(relativeRow, 1).Value   ' 単一列のみ対応
     End If
 
     ' 完全一致の場合で検索結果が同一でない場合はifNotFoundを返り値に設定
@@ -93,8 +93,10 @@ End Function
 ''' parent：親の項番セル。 ex:2-3-1となって欲しい場合は2-3のセルを指定する
 ''' delimiter：項番の区切り文字。親がない場合は空文字を指定する。デフォルトはハイフン。 ex:"-"を指定した場合は 2-3。"."を指定した場合は 2.3。
 ''' return：項番。
+'''
 ''' attention：親の項番を変更した場合は子の項番も自動で計算されるが孫の項番は自動で計算されないなど、項番が反映されない場合がある。
 '''            そのため、Ctrl + Alt + F9 でセル自動計算を実行することで反映させることができる。
+''' comments：1-1. などのように最後に.を付けたい場合は、現状はセルの書式設定のユーザー定義で @"." などのようにすることで任意の文字を最後に付けられる。
 Public Function ITEM_NUMBER(parent As Range, Optional delimiter As String = "-") As String
     Dim FUNCTION_NAME As String
     FUNCTION_NAME = "ITEM_NUMBER"
@@ -118,6 +120,7 @@ Public Function ITEM_NUMBER(parent As Range, Optional delimiter As String = "-")
         
         ' 親要素が異なる場合は現在のセルが最初の子要素なのでループを抜ける
         Dim prevFirstArgStr As String
+
         prevFirstArgStr = ExtractFirstArgFromFormula(targetCell.Formula, FUNCTION_NAME)
         If prevFirstArgStr = "" Or prevFirstArgStr <> thisFirstArgStr Then
             Exit Do
@@ -134,7 +137,7 @@ Public Function ITEM_NUMBER(parent As Range, Optional delimiter As String = "-")
     ' 最初の子要素として値を返す
     ' todo:アルファベットもいづれ対応。現在は数字のみ
     If foundCount <= 0 Then
-        ITEM_NUMBER = parent.Text & delimiter & 1
+        ITEM_NUMBER = parent.Value & delimiter & 1
         Exit Function
     End If
     
@@ -145,7 +148,7 @@ Public Function ITEM_NUMBER(parent As Range, Optional delimiter As String = "-")
         ' 最初の階層（≒親要素なし）の場合の処理
         parentItemStr = ""
     Else
-        parentItemStr = parent.Text
+        parentItemStr = parent.Value
     End If
     
     ' 指定のフォーマットの項番発行
@@ -201,7 +204,9 @@ Private Function ExtractFirstArgFromFormula(expression As String, functionName A
         End If
         
         functionNameLen = Len(functionName) + 2 ' +2 is to include "=" and "(" ex: =Row(A1)
-        ExtractFirstArgFromFormula = Mid(expression, functionNameLen + 1, InStr(expression, ",") - functionNameLen - 1) ' -1 is to exclude ","
+        Dim argSeparator As String
+        argSeparator = IIf(InStr(expression, ","), ",", ")")
+        ExtractFirstArgFromFormula = Mid(expression, functionNameLen + 1, InStr(expression, argSeparator) - functionNameLen - 1) ' -1 is to exclude "," or ")"
 End Function
 
 ''' 配列の要素数を求める。
@@ -247,3 +252,4 @@ Private Function IsInitialized(ary As Variant) As Boolean
 NOT_INITIALIZED_ERROR:
     IsInitialized = False
 End Function
+
